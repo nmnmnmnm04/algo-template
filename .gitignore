@@ -1,0 +1,26 @@
+# コンパイルで生成されるファイル
+*.o
+*.obj
+*.out
+*.exe
+/main
+/memo
+/sub
+/ahc
+/app
+/tempCodeRunnerFile
+/build/
+/cmake-build*/
+
+# 問題ごとの作業コード・出力（公開するのはmemo.cppとsnippets/）
+/main.cpp
+/sub.cpp
+/tempCodeRunnerFile.cpp
+/output.txt
+
+# ローカル環境の設定・公開作業用スクリプト
+/.vscode/
+/.agents/
+/.codex/
+/.aws/
+/publish_library.sh
