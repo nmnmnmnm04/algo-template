@@ -84,14 +84,35 @@ int main(){
 // 01. STL・文字列・入出力
 // ============================================================================
 
-// ソート・二分探索（探索する配列は昇順にソート済みであること）
+// ソート・重複削除
 // 大きい順にソートさせる比較関数 auto comp = [](int a, int b) { return a > b; };
 // sort(d.begin(),d.end(),[](int p, int q) { return c[p]>c[q]; });　添字配列dをcの値の降順でソート
 // sort(v.begin(), v.end(), greater<ll>());    sort(b.rbegin(), b.rend());で降順にsort
-// auto itr=lower_bound(v.begin(),v.end(),x); x以上の最小のイテレータを返す
-// upper_bound(v.begin(), v.end(), x) - v.begin()　は、「x 以下の要素数」(lower_boundにすればx未満の要素数)
 // 重複削除　v.erase(unique(v.begin(), v.end()), v.end());
 // uniqueは隣接する重複だけを消す。全体の重複削除には先にsortする。
+
+// 境界探索：vは昇順。各探索O(log n)。
+// 空ならbegin()==end()。*end()・prev(begin())はNG。
+
+auto low=lower_bound(nall(v),x); // x以上の最初の位置
+auto high=upper_bound(nall(v),x); // xより大きい最初の位置
+
+lower_bound(nall(v),x)-v.begin(); // x未満の個数
+upper_bound(nall(v),x)-v.begin(); // x以下の個数
+upper_bound(nall(v),x)-lower_bound(nall(v),x); // xと等しい個数
+
+if(low!=v.end())cout<<*low<<endl; // x以上の最小値
+else cout<<"該当なし"<<endl;
+if(high!=v.end())cout<<*high<<endl; // xより大きい最小値
+else cout<<"該当なし"<<endl;
+
+if(high!=v.begin())cout<<*prev(high)<<endl; // x以下の最大値
+else cout<<"該当なし"<<endl;
+if(low!=v.begin())cout<<*prev(low)<<endl; // x未満の最大値
+else cout<<"該当なし"<<endl;
+// prev(it)はitを変えず、1つ前を返す。prev(end())は空でなければ末尾。
+// set/multisetではst.lower_bound(x)/st.upper_bound(x)を使う。
+// 最小・最大は*st.begin(), *st.rbegin()（空チェックが必要）。
 
 // vector・set・map・tuple
 // 配列の要素の削除a.erase(a.begin()+i);
@@ -103,6 +124,17 @@ int main(){
 // mapはm.count(i)で存在を確かめないとキーが増えてしまう
 // vector<ll> vec(s.begin(), s.end());でsetからvectorなどに変換できる
 // 配列のサイズを後から与えるv.assign(n, 0);　(サイズ,初期値)　 二次元配列とか：v.assign(n, vector<ll>());
+
+// multiset（n=要素数、k=xの個数）。個数の頻繁な取得にはmap<値,ll>を使う。
+multiset<ll>ms;
+ms.insert(x); // O(log n)
+bool exists=ms.find(x)!=ms.end(); // 存在確認O(log n)。count(x)はO(log n+k)！
+if(auto it=ms.find(x); it!=ms.end())ms.erase(it); // 1個だけ削除
+ms.erase(x); // 同じ値を全削除。O(log n+k)。
+// erase(end())はNG。削除した要素のイテレータは無効。
+auto lower=ms.lower_bound(x); // x以上の最初の位置。O(log n)。
+auto upper=ms.upper_bound(x); // xより大きい最初の位置。O(log n)。
+// lower_bound(ms.begin(), ms.end(), x)やdistance(ms.begin(), it)はO(n)。
 
 // 文字列・文字変換
 // substr　文字列の切り抜き　substr(開始位置, 取り出す長さ);長さを省略すると最後まで切り抜ける
