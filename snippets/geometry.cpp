@@ -1,54 +1,65 @@
-// 幾何：整数座標の直線・偏角ソート・角度判定
+// 幾何：整数座標の内積・外積・直線・偏角ソート・角度判定
 // このブロック全体をコピーして使う。C++17以降。
-// 必要: #include <bits/stdc++.h> と using namespace std;（memo.cppの共通設定）。
-// 直線の各操作 O(1)。入力座標の絶対値は 10^18 以下を想定。
-// 判定は __int128 で正確に行い、交点・角度だけ long double に変換する。
+// 必要: #include <bits/stdc++.h>, using namespace std;, ll（memo.cppの共通設定）。
+// 直線の各操作 O(1)。座標の差・積・和などの中間計算までllに収まることが前提。
+// 大きな座標を扱うなら using i128 = __int128; を追加し、pointのx, y、
+// dot/crossの戻り値、den/num/crをi128に書き換える（idはllのままでよい）。
+// 戻り値だけを広げても遅いので、差や積を計算する前に座標の型を広げる。
+// 交点・角度だけ long double に変換する。
 // 浮動小数点座標の入力には対応しない。交点・角度には丸め誤差がある。
 
-struct Point {
-    long long x, y;
-    long long id = -1; // 元の添字（不要なら省略可）
+struct point {
+    ll x, y;
+    ll id = -1; // 元の添字（不要なら省略可）
 };
 
-struct PointLD {
+struct point_ld {
     long double x, y;
 };
 
-using i128 = __int128;
-struct Vec128 {
-    i128 x, y;
-};
-inline Vec128 difference(Point a, Point b) {
-    return {i128(a.x) - b.x, i128(a.y) - b.y};
+inline point difference(point a, point b) {
+    return {a.x - b.x, a.y - b.y};
 }
-inline i128 cross(Vec128 a, Vec128 b) {
-    return a.x * b.y - a.y * b.x;
-}
-inline i128 dot(Vec128 a, Vec128 b) {
+
+// pointを原点からの2次元ベクトルとして扱う。idは使わない。
+// 内積: ax*bx + ay*by。
+inline ll dot(point a, point b) {
     return a.x * b.x + a.y * b.y;
 }
+// 外積（2次元ではスカラー）: ax*by - ay*bx。
+// 正: a→bが反時計回り、負: 時計回り、0: 平行（零ベクトルを含む）。
+inline ll cross(point a, point b) {
+    return a.x * b.y - a.y * b.x;
+}
+
+// point u{1, 2}, v{3, 4};
+// ll d = dot(u, v);                         // 11
+// ll c = cross(u, v);                       // -2
+// 点A, B, Cに対し、ベクトルABとACの内積・外積:
+// dot(difference(B, A), difference(C, A));
+// cross(difference(B, A), difference(C, A));
 
 class Line {
-    Point p_;
-    Vec128 d_;
+    point p_;
+    point d_;
 
-    Line(Point p, Vec128 d) : p_(p), d_(d) {}
+    Line(point p, point d) : p_(p), d_(d) {}
 
   public:
-    // a != b が前提。方向ベクトルの差を取る前に __int128 へ変換。
-    static Line through(Point a, Point b) {
+    // a != b が前提。
+    static Line through(point a, point b) {
         assert(a.x != b.x || a.y != b.y);
         return Line(a, difference(b, a));
     }
 
-    bool contains(Point p) const {
+    bool contains(point p) const {
         return cross(d_, difference(p, p_)) == 0;
     }
 
     friend bool parallel(const Line &l, const Line &m);
     friend bool perpendicular(const Line &l, const Line &m);
     friend bool same_line(const Line &l, const Line &m);
-    friend optional<PointLD> intersection_ld(const Line &l, const Line &m);
+    friend optional<point_ld> intersection_ld(const Line &l, const Line &m);
 };
 
 // 逆向き・同一直線も含めて平行なら true。
@@ -60,13 +71,13 @@ inline bool perpendicular(const Line &l, const Line &m) {
     return dot(l.d_, m.d_) == 0;
 }
 
-inline optional<PointLD> intersection_ld(const Line &l, const Line &m) {
-    const i128 den = cross(l.d_, m.d_);
+inline optional<point_ld> intersection_ld(const Line &l, const Line &m) {
+    const ll den = cross(l.d_, m.d_);
     if (den == 0)
         return nullopt; // 平行・一致では一意な交点がない。
-    const i128 num = cross(difference(m.p_, l.p_), m.d_);
+    const ll num = cross(difference(m.p_, l.p_), m.d_);
     const long double t = (long double)num / (long double)den;
-    return PointLD{(long double)l.p_.x + t * (long double)l.d_.x,
+    return point_ld{(long double)l.p_.x + t * (long double)l.d_.x,
                    (long double)l.p_.y + t * (long double)l.d_.y};
 }
 
@@ -86,7 +97,7 @@ inline LineRelation relation(const Line &l, const Line &m) {
 // 使用例1: 各操作の意味（直線は両方向に無限に伸びる。線分ではない）
 // ============================================================================
 /*
-Point a{0, 0}, b{2, 2};
+point a{0, 0}, b{2, 2};
 auto l = Line::through(a, b);                  // y = x
 auto m = Line::through({0, 2}, {2, 0});         // y = -x + 2
 auto n = Line::through({0, 1}, {2, 3});         // y = x + 1
@@ -105,7 +116,7 @@ auto rel1 = relation(l, m);                   // LineRelation::Intersect（交�
 auto rel2 = relation(l, n);                   // LineRelation::Parallel（交点なし）
 auto rel3 = relation(l, r);                   // LineRelation::Coincident（一致）
 
-// 戻り値は optional<PointLD>。値があることを確認してから p->x, p->y を使う。
+// 戻り値は optional<point_ld>。値があることを確認してから p->x, p->y を使う。
 if (auto p = intersection_ld(l, m)) {
     cout << p->x << ' ' << p->y << '\n';  // 1 1
 }
@@ -128,7 +139,7 @@ auto coincident = intersection_ld(l, r);       // nullopt: 一致（一意に決
 // ============================================================================
 /*
 int main() {
-    Point a, b, c, d;
+    point a, b, c, d;
     cin >> a.x >> a.y >> b.x >> b.y;
     cin >> c.x >> c.y >> d.x >> d.y;
     auto l = Line::through(a, b);
@@ -153,20 +164,18 @@ int main() {
 // ベクトルの角度判定
 // ============================================================================
 
-// 非零ベクトル同士。内積 = i128(a.x) * b.x + i128(a.y) * b.y。
+// 非零ベクトル同士。内積はdot(a, b)、外積はcross(a, b)。
 // 内積 > 0: 90°未満、== 0: 90°、< 0: 90°超（90°以上なら <= 0）。
 // 外積 > 0: a→bが反時計回り、< 0: 時計回り、== 0: 平行。
-inline bool same_angle(Point a, Point b) {
-    Vec128 va{a.x, a.y}, vb{b.x, b.y};
-    return cross(va, vb) == 0 && dot(va, vb) > 0;
+inline bool same_angle(point a, point b) {
+    return cross(a, b) == 0 && dot(a, b) > 0;
 }
 
 // なす角 [0, π]（ラジアン）。
-inline long double angle_between(Point a, Point b) {
-    Vec128 va{a.x, a.y}, vb{b.x, b.y};
-    i128 cr = cross(va, vb);
+inline long double angle_between(point a, point b) {
+    ll cr = cross(a, b);
     if (cr < 0) cr = -cr;
-    return atan2l((long double)cr, (long double)dot(va, vb));
+    return atan2l((long double)cr, (long double)dot(a, b));
 }
 // 度数法: angle_between(a, b) * 180 / acosl(-1.0L)
 // ∠ABC: dot(difference(A,B), difference(C,B))の符号で判定。
@@ -175,21 +184,23 @@ inline long double angle_between(Point a, Point b) {
 // 偏角ソート
 // ============================================================================
 
-// x軸の正方向から反時計回り（0 <= 偏角 < 2π）。必要: Point, i128。
+// x軸の正方向から反時計回り（0 <= 偏角 < 2π）。必要: point, ll。
 // 原点は先頭、同じ向きなら原点に近い順。O(n log n)。
-inline bool angle_less(Point a, Point b) {
+// 単独でコピーして使えるよう、内積・外積はこの関数内で直接計算する。
+// 積・和がllに収まらないなら、pointのx, yとcrをi128に書き換える。
+inline bool angle_less(point a, point b) {
     int ha = (a.y < 0 || (a.y == 0 && a.x < 0)); // 前半0、後半1
     int hb = (b.y < 0 || (b.y == 0 && b.x < 0));
     if (ha != hb) return ha < hb;
 
-    i128 cr = i128(a.x) * b.y - i128(a.y) * b.x;
+    ll cr = a.x * b.y - a.y * b.x;
     if (cr != 0) return cr > 0; // 同じ半周内では外積で比較
 
-    return i128(a.x) * a.x + i128(a.y) * a.y
-         < i128(b.x) * b.x + i128(b.y) * b.y;
+    return a.x * a.x + a.y * a.y
+         < b.x * b.x + b.y * b.y;
 }
 
-// vector<Point> points(n);
+// vector<point> points(n);
 // rep(i, n) {
 //     cin >> points[i].x >> points[i].y;
 //     points[i].id = i;

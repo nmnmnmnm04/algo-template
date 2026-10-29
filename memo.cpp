@@ -17,7 +17,7 @@
 //   snippets/strings.cpp              ローリングハッシュ
 //   snippets/graphs.cpp               BFS・ダイクストラ・木・木DP・パス・SCC
 //   snippets/dp.cpp                   部分文字列DP・bitDP・TSP・桁DP
-//   snippets/geometry.cpp             整数座標の直線・位置関係・交点・偏角ソート・角度判定
+//   snippets/geometry.cpp             整数座標の内積・外積・直線・位置関係・交点・偏角ソート・角度判定
 
 // ============================================================================
 // 00. 共通設定
@@ -29,7 +29,7 @@ using mint = modint998244353;
 using namespace std;
 using u64 = unsigned long long;
 using u128 = unsigned __int128;
-using i128 = __int128; // 符号付き。外積など正負を扱う計算に使う
+using i128 = __int128;
 #define ll long long
 #define ld long double
 #define rep(i,n) for(ll i=0;i<n;i++)
