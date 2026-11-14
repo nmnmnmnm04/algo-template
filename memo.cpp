@@ -93,6 +93,7 @@ int main(){
 
 // 境界探索：vは昇順。各探索O(log n)。
 // 空ならbegin()==end()。*end()・prev(begin())はNG。
+// setで二分探索するときはイテレータの引き算ができないことに注意(間に何個あるか不明)
 
 auto low=lower_bound(nall(v),x); // x以上の最初の位置
 auto high=upper_bound(nall(v),x); // xより大きい最初の位置
@@ -113,6 +114,18 @@ else cout<<"該当なし"<<endl;
 // prev(it)はitを変えず、1つ前を返す。prev(end())は空でなければ末尾。
 // set/multisetではst.lower_bound(x)/st.upper_bound(x)を使う。
 // 最小・最大は*st.begin(), *st.rbegin()（空チェックが必要）。
+
+// ---- 座標圧縮（座圧） ----
+vector<ll>compress=v;
+sort(nall(compress));
+compress.erase(unique(nall(compress)),compress.end()); // 第2引数を忘れない（uniqueだけではサイズは減らない）
+ll m=compress.size();
+
+unordered_map<ll,ll>to_id;
+rep(i,m)to_id[compress[i]]=i;
+
+// 値 -> 添字: to_id[x]、添字 -> 元の値: compress[i]。
+// to_idで使う値は先にcompressへ入れる（未登録のto_id[x]は0を追加する）。
 
 // vector・set・map・tuple
 // 配列の要素の削除a.erase(a.begin()+i);
